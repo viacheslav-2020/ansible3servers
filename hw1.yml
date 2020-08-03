@@ -1,0 +1,65 @@
+---
+- name: install assembler environment
+  hosts: assembler
+  become: yes
+
+  tasks:
+  - name: Ensure java  package is present
+    apt:
+      name: default-jdk
+      state: present
+
+  - name: Ensure maven  package is present
+    apt:
+      name: maven
+      state: present
+
+  - name: Ensure git package is present
+    apt:
+      name: git
+      state: present
+
+  - name: Making assembling directory
+    shell: mkdir /home/javaapp
+
+  - name: Clone git repository  boxfuse script
+    shell:
+      cmd: git clone https://github.com/boxfuse/boxfuse-sample-java-war-hello.git
+      chdir: /home/javaapp/
+
+  - name: Assembling an app
+    shell:
+      cmd: mvn package
+      chdir: /home/javaapp/boxfuse-sample-java-war-hello/ 
+
+
+- name: install production environment
+  hosts: production
+  become: yes
+
+  tasks:
+  - name: Ensure tomcat8  package is present
+    apt:
+      name: tomcat8
+      state: present
+
+- name: Copy application between remote servers
+  user: root
+  hosts: production
+  tasks:
+    - name: Transfer file from assembler to production
+      synchronize:
+        src: /home/javaapp/boxfuse-sample-java-war-hello/target/hello-1.0.war
+        dest: /var/lib/tomcat8/webapps/hello.war
+      delegate_to: assembler
+
+
+- name: Restart tomcat
+  hosts: production
+  become: yes
+
+  tasks:
+  - name: Restart tomcat
+    apt:
+      name: tomcat8
+      state: restart  
