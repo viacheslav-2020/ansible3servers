@@ -19,8 +19,11 @@
       name: git
       state: present
 
-  - name: Making assembling directory
-    shell: mkdir /home/javaapp
+  - name: Create assembling directory
+    file:
+      path: /home/javaapp
+      state: directory
+      mode: '0755'
 
   - name: Clone git repository  boxfuse script
     shell:
@@ -43,23 +46,13 @@
       name: tomcat8
       state: present
 
-- name: Copy application between remote servers
-  user: root
-  hosts: production
-  tasks:
-    - name: Transfer file from assembler to production
-      synchronize:
-        src: /home/javaapp/boxfuse-sample-java-war-hello/target/hello-1.0.war
-        dest: /var/lib/tomcat8/webapps/hello.war
-      delegate_to: assembler
+  - name: Copy application betweeen remote servers
+    synchronize:
+      src: "/home/javaapp/boxfuse-sample-java-war-hello/target/hello-1.0.war"
+      dest: "/var/lib/tomcat8/webapps/hello.war"
+    delegate_to: 84.201.168.112
 
-
-- name: Restart tomcat
-  hosts: production
-  become: yes
-
-  tasks:
   - name: Restart tomcat
     apt:
       name: tomcat8
-      state: restart  
+      state: present  
